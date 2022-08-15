@@ -28,7 +28,7 @@ do
   echo "  Settings > Developer Options > USB Debugging > Enable"
   echo "If it's > unauthorized < confirm the message on your device"
   echo "Try again?"
-  read -p
+  read -p ""
 done
 
 device_name=$(adb devices -l | grep -oP 'model:\S+' | cut -d':' -f2)
