@@ -1,9 +1,10 @@
 #!/bin/bash
 
 # 30-07-2022  JoelKle  1.0.0  Initial Version
-
+# 15-03-2023  JoelKle  1.1.0  Fix
 
 set -euo pipefail
+
 
 if ! command -v adb >/dev/null; then
   echo "Required command > adb < not found!"
@@ -24,24 +25,24 @@ while ! (adb devices -l | grep -qoP 'model:\S+')
 do
   adb devices -l
   echo "Could not found your device model"
-  echo "Ensure Developer Options and USB Debugging are enabled on your device"
+  echo "Make sure Developer Options and USB Debugging are enabled on your device"
   echo "  Settings > Developer Options > USB Debugging > Enable"
-  echo "If it's > unauthorized < confirm the message on your device"
+  echo "Confirm the authorization message."
   echo "Try again?"
-  read -p ""
+  read
 done
 
 device_name=$(adb devices -l | grep -oP 'model:\S+' | cut -d':' -f2)
 echo "Found device $device_name"
 echo "Continue?"
-read -p ""
+read
 
 echo "Start backup of JW Library on device ${device_name} ..."
 
-folder="${device_name}_${today_time_underscore}_jwlibrary_backup"
-mkdir $folder && cd $folder
+folder="backups/${device_name}_${today_time_underscore}_jwlibrary_backup"
+mkdir -p $folder && cd $folder
 
-echo "Check your ${device_name}. A screen should have popped up to start the backup."
+echo "A screen should have popped up to start the backup."
 echo "Do not enter a passwort!"
 echo
 adb backup -f org.jw.jwlibrary.mobile.ab -noapk org.jw.jwlibrary.mobile
@@ -53,6 +54,13 @@ echo
 
 mkdir extracted
 dd if=org.jw.jwlibrary.mobile.ab bs=24 skip=1 | zlib-flate -uncompress | tar xf - -C extracted/
+
+if [ ! -f extracted/apps/org.jw.jwlibrary.mobile/db/userData.db ]; then
+  echo ""
+  echo "Unfortunately I couldn't find any notes in the backup."
+  echo "EXIT"
+  exit 0
+fi
 
 cp extracted/apps/org.jw.jwlibrary.mobile/db/userData.db .
 
@@ -84,3 +92,4 @@ adb push $jwlibrary_filename /storage/emulated/0/Download/
 echo
 echo "Pushed file $jwlibrary_filename to /storage/emulated/0/Download/ folder on your device"
 echo "Start the recovery in the JW Library app!"
+
